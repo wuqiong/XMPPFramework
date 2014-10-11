@@ -187,7 +187,7 @@ static NSMutableArray *proxyCandidates;
  * Initializes a new TURN socket to create a TCP connection by routing through a proxy.
  * This constructor configures the object to be the client connecting to a server.
 **/
-- (id)initWithStream:(XMPPStream *)stream toJID:(XMPPJID *)aJid
+- (id)initWithStream:(XMPPStream *)stream toJID:(XMPPJID *)aJid sid:(NSString *)sid
 {
 	if ((self = [super init]))
 	{
@@ -196,6 +196,7 @@ static NSMutableArray *proxyCandidates;
 		// Store references
 		xmppStream = stream;
 		jid = aJid;
+		streamId = sid;
 		
 		// Create a uuid to be used as the id for all messages in the stun communication.
 		// This helps differentiate various turn messages between various turn sockets.
@@ -234,6 +235,7 @@ static NSMutableArray *proxyCandidates;
 		
 		// Store a copy of the ID (which will be our uuid)
 		uuid = [[iq elementID] copy];
+		streamId = [[[iq elementForName:@"query"] attributeForName:@"sid"] stringValue];
 		
 		// Setup initial state for a server connection
 		state = STATE_INIT;
@@ -435,16 +437,23 @@ static NSMutableArray *proxyCandidates;
 	// </iq>
 	
 	NSXMLElement *query = [NSXMLElement elementWithName:@"query" xmlns:@"http://jabber.org/protocol/bytestreams"];
-	[query addAttributeWithName:@"sid" stringValue:uuid];
+	[query addAttributeWithName:@"sid" stringValue:streamId];
 	[query addAttributeWithName:@"mode" stringValue:@"tcp"];
 	
 	NSUInteger i;
 	for(i = 0; i < [streamhosts count]; i++)
 	{
-		[query addChild:[streamhosts objectAtIndex:i]];
+        NSXMLElement *streamhost = (NSXMLElement*)[streamhosts objectAtIndex:i];
+//        NSXMLElement *sh = [NSXMLElement elementWithName:@"streamhost"];
+//        [sh addAttributeWithName:@"jid" stringValue:[[streamhost attributeForName:@"jid"] stringValue]];
+//        [sh addAttributeWithName:@"host" stringValue:[[streamhost attributeForName:@"host"] stringValue]];
+//        [sh addAttributeWithName:@"port" stringValue:[[streamhost attributeForName:@"port"] stringValue]];
+//        [query addChild:sh];
+        [query addChild:streamhost];
 	}
 	
 	XMPPIQ *iq = [XMPPIQ iqWithType:@"set" to:jid elementID:uuid child:query];
+	[iq addAttributeWithName:@"from" stringValue:[xmppStream.myJID full]];
 	
 	[xmppStream sendElement:iq];
 	
@@ -471,7 +480,7 @@ static NSMutableArray *proxyCandidates;
 	[streamhostUsed addAttributeWithName:@"jid" stringValue:[proxyJID full]];
 	
 	NSXMLElement *query = [NSXMLElement elementWithName:@"query" xmlns:@"http://jabber.org/protocol/bytestreams"];
-	[query addAttributeWithName:@"sid" stringValue:uuid];
+	[query addAttributeWithName:@"sid" stringValue:streamId];
 	[query addChild:streamhostUsed];
 	
 	XMPPIQ *iq = [XMPPIQ iqWithType:@"result" to:jid elementID:uuid child:query];
@@ -492,7 +501,7 @@ static NSMutableArray *proxyCandidates;
 	NSXMLElement *activate = [NSXMLElement elementWithName:@"activate" stringValue:[jid full]];
 	
 	NSXMLElement *query = [NSXMLElement elementWithName:@"query" xmlns:@"http://jabber.org/protocol/bytestreams"];
-	[query addAttributeWithName:@"sid" stringValue:uuid];
+	[query addAttributeWithName:@"sid" stringValue:streamId];
 	[query addChild:activate];
 	
 	XMPPIQ *iq = [XMPPIQ iqWithType:@"set" to:proxyJID elementID:uuid child:query];
@@ -704,6 +713,14 @@ static NSMutableArray *proxyCandidates;
 	XMPPJID *streamhostJID = [XMPPJID jidWithString:jidStr];
 	
 	NSString *host = [[streamhost attributeForName:@"host"] stringValue];
+
+	//bug fix for which miss or wrong host attribute
+	if (nil == host || 0 == [host length] ||
+        [host isEqualToString:@"0.0.0.0"] || [host isEqualToString:@"127.0.0.1"]) {
+		host = xmppStream.hostName;
+		[streamhost addAttributeWithName:@"host" stringValue:host];
+	}
+
 	UInt16 port = [[[streamhost attributeForName:@"port"] stringValue] intValue];
 	
 	if(streamhostJID != nil || host != nil || port > 0)
@@ -1000,7 +1017,8 @@ static NSMutableArray *proxyCandidates;
 		proxyJID = [XMPPJID jidWithString:[[streamhost attributeForName:@"jid"] stringValue]];
 		
 		proxyHost = [[streamhost attributeForName:@"host"] stringValue];
-		if([proxyHost isEqualToString:@"0.0.0.0"])
+		if(proxyHost || [proxyHost isEqualToString:@"0.0.0.0"]
+                    || [proxyHost isEqualToString:@"127.0.0.1"])
 		{
 			proxyHost = [proxyJID full];
 		}
@@ -1119,7 +1137,7 @@ static NSMutableArray *proxyCandidates;
 	XMPPJID *initiatorJID = isClient ? myJID : jid;
 	XMPPJID *targetJID    = isClient ? jid   : myJID;
 	
-	NSString *hashMe = [NSString stringWithFormat:@"%@%@%@", uuid, [initiatorJID full], [targetJID full]];
+	NSString *hashMe = [NSString stringWithFormat:@"%@%@%@", streamId, [initiatorJID full], [targetJID full]];
 	NSData *hashRaw = [[hashMe dataUsingEncoding:NSUTF8StringEncoding] xmpp_sha1Digest];
 	NSData *hash = [[hashRaw xmpp_hexStringValue] dataUsingEncoding:NSUTF8StringEncoding];
 	

@@ -77,3 +77,7 @@
 //#import "XMPPAutoTime.h"
 //
 //#import "XMPPElement+Delay.h"
+
+//#import "XMPPSIFileTransfer.h"
+//#import "XMPPStreamInitiation.h"
+//#import "XMPPMultiCast.h"

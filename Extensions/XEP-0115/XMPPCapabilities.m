@@ -43,7 +43,7 @@
  * According to the XEP it is RECOMMENDED for the value of the 'node' attribute to be an HTTP URL.
 **/
 #ifndef DISCO_NODE
-	#define DISCO_NODE @"https://github.com/robbiehanson/XMPPFramework"
+	#define DISCO_NODE @"https://github.com/wuqiong/XMPPFramework"
 #endif
 
 @interface GCDTimerWrapper : NSObject

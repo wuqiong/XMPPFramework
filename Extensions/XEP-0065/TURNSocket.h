@@ -22,7 +22,8 @@
 	XMPPStream *xmppStream;
 	XMPPJID *jid;
 	NSString *uuid;
-	
+	NSString *streamId;
+
 	id delegate;
 	dispatch_queue_t delegateQueue;
 	
@@ -54,7 +55,7 @@
 + (NSArray *)proxyCandidates;
 + (void)setProxyCandidates:(NSArray *)candidates;
 
-- (id)initWithStream:(XMPPStream *)xmppStream toJID:(XMPPJID *)jid;
+- (id)initWithStream:(XMPPStream *)xmppStream toJID:(XMPPJID *)jid sid:(NSString*)sid;
 - (id)initWithStream:(XMPPStream *)xmppStream incomingTURNRequest:(XMPPIQ *)iq;
 
 - (void)startWithDelegate:(id)aDelegate delegateQueue:(dispatch_queue_t)aDelegateQueue;

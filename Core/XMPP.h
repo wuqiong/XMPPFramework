@@ -2,6 +2,12 @@
 // Core classes
 // 
 
+#import <Foundation/Foundation.h>
+#if !TARGET_OS_IPHONE
+#import <Cocoa/Cocoa.h>
+#else
+#import <UIKit/UIKit.h>
+#endif
 #import "XMPPJID.h"
 #import "XMPPStream.h"
 #import "XMPPElement.h"
