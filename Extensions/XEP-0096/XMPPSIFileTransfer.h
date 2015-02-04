@@ -26,7 +26,7 @@ typedef enum {
     kXMPPSIFileTransferMimeTypeGIF,
     kXMPPSIFileTransferMimeTypeMP3,
     kXMPPSIFileTransferMimeTypeOPUS,
-    kXMPPSIFileTransferMimeTypeUNKNOWN
+    kXMPPSIFileTransferMimeTypeDATA
 } XMPPSIFileTransferMimeType;
 
 @interface XMPPSIFileTransfer : XMPPModule<TURNSocketDelegate, GCDAsyncSocketDelegate> {

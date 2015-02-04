@@ -110,6 +110,9 @@
             mimeType = kXMPPSIFileTransferMimeTypeMP3;
         }else if ([fileExt caseInsensitiveCompare:@"opus"] == NSOrderedSame ){
             mimeType = kXMPPSIFileTransferMimeTypeOPUS;
+        }else
+        {
+            mimeType = kXMPPSIFileTransferMimeTypeDATA;
         }
     }
     
@@ -345,7 +348,8 @@
                            || mimeType == kXMPPSIFileTransferMimeTypeGIF
                            || mimeType == kXMPPSIFileTransferMimeTypeJPG
                            || mimeType == kXMPPSIFileTransferMimeTypeMP3
-                           || mimeType == kXMPPSIFileTransferMimeTypeOPUS))
+                           || mimeType == kXMPPSIFileTransferMimeTypeOPUS
+                           || mimeType == kXMPPSIFileTransferMimeTypeDATA))
                     {
                         state = kXMPPSIFileTransferStateReceiving;
                         turnSocket = [[TURNSocket alloc] initWithStream:xmppStream incomingTURNRequest:inIq];
@@ -377,7 +381,7 @@
 #pragma mark - TurnSocket delegates
 - (void)turnSocket:(TURNSocket *)sender didSucceed:(GCDAsyncSocket *)socket {
 	NSLog(@"TURN Connection succeeded! %@", socket);
-	NSLog(@"You now have a socket that you can use to send/receive data to/from the other person.");
+//	NSLog(@"You now have a socket that you can use to send/receive data to/from the other person.");
 
     [socket synchronouslySetDelegate:self delegateQueue:dispatch_get_main_queue()];
 
@@ -398,9 +402,9 @@
 - (void)socket:(GCDAsyncSocket *)sock didReadData:(NSData *)data withTag:(long)tag {
     NSLog(@"FINISHED %d", [data length]);
     [sock disconnectAfterReading];
+    [multicastDelegate receivedData:data from:senderJID withMimeType:mimeType expectedFileName:recvFileName];
     state = kXMPPSIFileTransferStateNone;
     mimeType = kXMPPSIFileTransferMimeTypeNone;
-    [multicastDelegate receivedData:data from:senderJID withMimeType:mimeType expectedFileName:recvFileName];
 }
 
 - (void)socket:(GCDAsyncSocket *)sock didWriteDataWithTag:(long)tag {
